@@ -13,13 +13,8 @@ var db;
 MongoClient.connect(MONGODB_URI, { useUnifiedTopology: true },function(err, client) {
   // 에러처리
   if(err) {return console.log('err')}
-  
+
   db = client.db('todoApp'); 
-
-  // db.collection('post').insertOne( { 이름: 'John', _id: 1, 나이: 20 }, function(err, result) {
-  //   console.log('save complete');
-  // });
-
   app.listen(port, function () {
     console.log(`running on ${port}...`);
   });
@@ -43,6 +38,10 @@ app.post('/add', function (req, res) { // req에 post 보낸거 저장
   })
 })
 
+// 모든 데이터 꺼내는 코드
 app.get('/list', function (req, res) {
-  res.render('list.ejs');
+  db.collection('post').find().toArray(function (err, result) {
+    console.log(result);
+    res.render('list.ejs', { posts : result });
+  });
 })
