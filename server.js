@@ -5,6 +5,7 @@ require('dotenv').config();
 const { PORT, MONGODB_URI } = process.env;
 const port = PORT || 4000;
 
+app.use('public', express.static('public'));
 app.set('view engine', 'ejs');
 app.engine('ejs', require('ejs').__express);
 
@@ -24,11 +25,11 @@ app.use(express.urlencoded({extended: true})) // body parser express에 다 저�
 
 
 app.get('/', function (req, res) {
-  res.sendFile(__dirname + '/index.html');
+  res.render('index.ejs');
 })
 
 app.get('/write', function (req, res) {
-  res.sendFile(__dirname + '/write.html');
+  res.render('write.ejs');
 })
 
 app.post('/add', function (req, res) { // req에 post 보낸거 저장
@@ -58,12 +59,25 @@ app.get('/list', function (req, res) {
 })
 
 app.delete('/delete', function(req, res) {
-
   // id가 문자로 나오므로 숫자로 변환해야된다 
   req.body._id = parseInt(req.body._id);
   db.collection('post').deleteOne(req.body, function(err, result) {
+    if (err) {
+      res.status(400).send({ message: 'Fail' }); // 요청 실패 메세지 
+    }
     console.log('삭제 완료');
     res.status(200).send({ message: 'Success' }); // 요청 성공 메세지 
-    // res.status(400).send({ message: 'Fail' }); // 요청 실패 메세지 
   });
 })
+
+app.get('/detail/:id', function(req, res) {
+  // _id가 request의 parameter들 중 id와 같은 데이터를 찾아와서 그 결과를 detail페이지에 render
+  // 다만 아까처럼 type이 string이 되었기에, parseInt를 통해서 바꿔 찾아줘야한다.
+  db.collection('post').findOne({ _id: parseInt(req.params.id) }, function(err, result) {
+    // 없는 게시물 처리하기 에러처리
+    if (err) {
+      return console.log(err);
+    }
+    res.render('detail.ejs', { data: result });
+  })
+});
