@@ -32,11 +32,22 @@ app.get('/write', function (req, res) {
 })
 
 app.post('/add', function (req, res) { // req에 post 보낸거 저장
-  console.log('전송완료');
-  db.collection('post').insertOne({ 제목 : req.body.title, 날짜 : req.body.date }, function () {
-    console.log('save complete');
-  })
-})
+  res.send('전송완료');
+  db.collection('counter').findOne({ name : '게시물갯수' }, function(err, result) {
+    console.log(result.totalPost);
+    // 총 데이터 갯수
+    var totalPostCount = result.totalPost
+
+    db.collection('post').insertOne({ _id : totalPostCount + 1, 제목 : req.body.title, 날짜 : req.body.date }, function () {
+      console.log('save complete');
+      // $set 바꿀때 스는 연산자 $inc 더할때 쓰는 연산자 
+      // name이 게시물 갯수인것 찾아서 1증가
+      db.collection('counter').updateOne({ name : '게시물갯수' }, { $inc : { totalPost : 1 }}, function(err, result) {
+        if (err) { return console.log(err)}
+      })
+    });
+  });
+});
 
 // 모든 데이터 꺼내는 코드
 app.get('/list', function (req, res) {
