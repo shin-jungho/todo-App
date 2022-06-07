@@ -56,3 +56,14 @@ app.get('/list', function (req, res) {
     res.render('list.ejs', { posts : result });
   });
 })
+
+app.delete('/delete', function(req, res) {
+
+  // id가 문자로 나오므로 숫자로 변환해야된다 
+  req.body._id = parseInt(req.body._id);
+  db.collection('post').deleteOne(req.body, function(err, result) {
+    console.log('삭제 완료');
+    res.status(200).send({ message: 'Success' }); // 요청 성공 메세지 
+    // res.status(400).send({ message: 'Fail' }); // 요청 실패 메세지 
+  });
+})
