@@ -2,6 +2,10 @@ const express = require('express');
 const app = express();
 const MongoClient = require('mongodb/lib/mongo_client');
 const methodOverride = require('method-override');
+const passport = require('passport');
+const LocalStrategy = require('passport-local').Strategy;
+const session = require('express-session');
+
 
 require('dotenv').config();
 const { PORT, MONGODB_URI } = process.env;
@@ -9,6 +13,9 @@ const port = PORT || 4000;
 
 app.use('public', express.static('public'));
 app.use(methodOverride('_method'));
+app.use(session({secret : '비밀코드', resave : true, saveUninitialized: false}));
+app.use(passport.initialize());
+app.use(passport.session());
 
 app.set('view engine', 'ejs');
 app.engine('ejs', require('ejs').__express);
@@ -105,4 +112,42 @@ app.put('/edit', function (req, res) {
     console.log('수정 완료');
     res.redirect('/list');
   })
+})
+
+app.get('/login', function(req, res) {
+  res.render('login.ejs');
+})
+
+app.post('/login', passport.authenticate('local', { failureRedirect: '/fail' }),function(req, res) {
+  res.redirect('/')
+})
+
+passport.use(new LocalStrategy({
+  usernameField: 'id', // form의 name이 id 인 것이 username
+  passwordField: 'pw', // form의 name이 pw 인 것이 password
+  session: true, // session을 저장할 것인지
+  passReqToCallback: false, // id/pw 외에 다른 정보 검증 시
+}, function (inputId, inputPw, done) {
+  // console.log(inputId, inputPw);
+  db.collection('login').findOne({ id: inputId }, function (err, result) {
+    if (err) return done(err)
+
+    // done(서버에러, 성공시 사용자 db데이터, 에러메세지)
+    if (!result) return done(null, false, { message: '존재하지않는 아이디요' })
+    if (inputPw === result.pw) {
+      return done(null, result)
+    } else {
+      return done(null, false, { message: '비번틀렸어요' })
+    }
+  })
+}));
+
+// 세션 데이터 저장시키는 코드
+passport.serializeUser(function(user, done) {
+  done(null, user.id)
+});
+
+// 마이페이지 접속시 발동 -> 세션데이터를 가진 사람을 db에서 찾는 것
+passport.deserializeUser(function(id, done) {
+  done(null, {})
 })
