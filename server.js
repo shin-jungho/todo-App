@@ -1,11 +1,15 @@
 const express = require('express');
 const app = express();
 const MongoClient = require('mongodb/lib/mongo_client');
+const methodOverride = require('method-override');
+
 require('dotenv').config();
 const { PORT, MONGODB_URI } = process.env;
 const port = PORT || 4000;
 
 app.use('public', express.static('public'));
+app.use(methodOverride('_method'));
+
 app.set('view engine', 'ejs');
 app.engine('ejs', require('ejs').__express);
 
@@ -81,3 +85,24 @@ app.get('/detail/:id', function(req, res) {
     res.render('detail.ejs', { data: result });
   })
 });
+
+app.get('/edit/:id', function (req, res) {
+  db.collection('post').findOne({ _id: parseInt(req.params.id) }, function (err, result) {
+    if (err) {
+      return console.log(err) 
+    }
+    console.log(result)
+    console.log(req.params.id)
+    res.render('edit.ejs', { post: result });
+  })
+})
+
+app.put('/edit', function (req, res) {
+  db.collection('post').updateOne({ _id : parseInt(req.params.id) }, { $set : { 제목 : req.body.title, 날짜 : req.body.date }}, function (err, result) {
+    if (err) {
+      return console.error(err);
+    }
+    console.log('수정 완료');
+    res.redirect('/list');
+  })
+})
