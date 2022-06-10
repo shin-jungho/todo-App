@@ -70,10 +70,24 @@ app.get('/list', function (req, res) {
 })
 
 // 서버에서 query string 꺼내는 코드
-app.get('/search', (req, res) => {
-  db.collection('post').find({ 제목 : req.query.value }).toArray((err, result) => {
-    console.log(result);
-    res.render('search.ejs', { posts : result });
+app.get('/search', (req, res)=>{
+  let searchOption =[
+    {
+      $search: {
+        index: 'titleSearch',
+        text: {
+          query: req.query.value,
+          path: '제목'  // 제목날짜 둘다 찾고 싶으면 ['제목', '날짜']
+        }
+      }
+    },
+    // 조건을 더 달수 있음
+    { $sort : { _id : 1 } },
+    { $project : { 제목: 1, _id: 0, score: { $meta: 'searchScore' } } }
+  ] 
+  db.collection('post').aggregate(searchOption).toArray((err, result)=>{
+    console.log(result)
+    res.render('search.ejs', {posts : result})
   })
 })
 
