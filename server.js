@@ -69,6 +69,14 @@ app.get('/list', function (req, res) {
   });
 })
 
+// 서버에서 query string 꺼내는 코드
+app.get('/search', (req, res) => {
+  db.collection('post').find({ 제목 : req.query.value }).toArray((err, result) => {
+    console.log(result);
+    res.render('search.ejs', { posts : result });
+  })
+})
+
 app.delete('/delete', function(req, res) {
   // id가 문자로 나오므로 숫자로 변환해야된다 
   req.body._id = parseInt(req.body._id);
