@@ -5,7 +5,7 @@ const methodOverride = require('method-override');
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 const session = require('express-session');
-
+const crypto = require('crypto');
 
 require('dotenv').config();
 const { PORT, MONGODB_URI } = process.env;
@@ -122,6 +122,44 @@ app.post('/login', passport.authenticate('local', { failureRedirect: '/fail' }),
   res.redirect('/')
 })
 
+app.get('/mypage', isLogin, function(req, res) {
+  console.log(req.user);
+  res.render('mypage.ejs', { user : req.user })
+})
+
+// 마이페이지 미들웨어
+function isLogin(req, res, next) {
+  if(req.user) {
+    next()
+  } else {
+    res.send('로그인이 필요합니다.')
+  }
+}
+
+// 회원가입 코드
+app.get('/join', (req, res) => {
+  res.render('join.ejs')
+})
+
+app.post('/register', (req, res) => {
+  db.collection('login').find({ id: req.body.id }).toArray((err, result) => {
+    if(err) { 
+      return console.log(err); 
+    } else if(!result) { // id가 없을때 login콜렉션에 db 삽입
+      db.collection('login').insertOne({
+        id: req.body.id,
+        pw: req.body.pw
+      }, (err, result) => {
+        res.redirect('/');
+      });
+    }
+    else { // 이미 존재하는 아이디일때
+      res.send ('이미 존재하는 아이디입니다.')
+    }
+  });
+});
+
+// 로그인 기능 코드
 passport.use(new LocalStrategy({
   usernameField: 'id', // form의 name이 id 인 것이 username
   passwordField: 'pw', // form의 name이 pw 인 것이 password
@@ -133,13 +171,17 @@ passport.use(new LocalStrategy({
     if (err) return done(err)
 
     // done(서버에러, 성공시 사용자 db데이터, 에러메세지)
-    if (!result) return done(null, false, { message: '존재하지않는 아이디요' })
-    if (inputPw === result.pw) {
-      return done(null, result)
-    } else {
-      return done(null, false, { message: '비번틀렸어요' })
-    }
-  })
+    if (!result) return done(null, false, { message: '존재하지않는 아이디입니다.' })
+    crypto.pbkdf2(inputPw, result.buf, 100000, 64, 'sha512', (err, key) => {
+      let newPw = key.toString('base64');
+      console.log('new pw :', newPw);
+      if (newPw === result.pw) {
+        return done(null, result)
+      } else {
+        return done(null, false, { message: '비번틀렸어요' })
+      }
+    })
+    })
 }));
 
 // 세션 데이터 저장시키는 코드
@@ -147,7 +189,10 @@ passport.serializeUser(function(user, done) {
   done(null, user.id)
 });
 
-// 마이페이지 접속시 발동 -> 세션데이터를 가진 사람을 db에서 찾는 것
-passport.deserializeUser(function(id, done) {
-  done(null, {})
+// 마이페이지 접속시 발동 -> 로그인한 유저의 개인정보 db에서 찾는 것
+passport.deserializeUser(function(id, done) { // id = user.id
+  db.collection('login').findOne({ id: id }, function(err, result) {
+    if (err) { return console.log(err)}
+    done(null, result)
+  })
 })
