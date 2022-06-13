@@ -43,23 +43,7 @@ app.get('/write', function (req, res) {
   res.render('write.ejs');
 })
 
-app.post('/add', function (req, res) { // req에 post 보낸거 저장
-  res.send('전송완료');
-  db.collection('counter').findOne({ name : '게시물갯수' }, function(err, result) {
-    console.log(result.totalPost);
-    // 총 데이터 갯수
-    var totalPostCount = result.totalPost
 
-    db.collection('post').insertOne({ _id : totalPostCount + 1, 제목 : req.body.title, 날짜 : req.body.date }, function () {
-      console.log('save complete');
-      // $set 바꿀때 스는 연산자 $inc 더할때 쓰는 연산자 
-      // name이 게시물 갯수인것 찾아서 1증가
-      db.collection('counter').updateOne({ name : '게시물갯수' }, { $inc : { totalPost : 1 }}, function(err, result) {
-        if (err) { return console.log(err)}
-      })
-    });
-  });
-});
 
 // 모든 데이터 꺼내는 코드
 app.get('/list', function (req, res) {
@@ -158,28 +142,7 @@ function isLogin(req, res, next) {
   }
 }
 
-// 회원가입 코드
-app.get('/join', (req, res) => {
-  res.render('join.ejs')
-})
 
-app.post('/register', (req, res) => {
-  db.collection('login').find({ id: req.body.id }).toArray((err, result) => {
-    if(err) { 
-      return console.log(err); 
-    } else if(!result) { // id가 없을때 login콜렉션에 db 삽입
-      db.collection('login').insertOne({
-        id: req.body.id,
-        pw: req.body.pw
-      }, (err, result) => {
-        res.redirect('/');
-      });
-    }
-    else { // 이미 존재하는 아이디일때
-      res.send ('이미 존재하는 아이디입니다.')
-    }
-  });
-});
 
 // 로그인 기능 코드
 passport.use(new LocalStrategy({
@@ -218,3 +181,64 @@ passport.deserializeUser(function(id, done) { // id = user.id
     done(null, result)
   })
 })
+
+// 회원가입 코드
+app.get('/signup', (req, res) => {
+  res.render('signup.ejs')
+})
+
+// app.post('/register', (req, res) => {
+//   db.collection('login').find({ id: req.body.id }).toArray((err, result) => {
+//     if(err) { 
+//       return console.log(err); 
+//     } else if(!result) { // id가 없을때 login콜렉션에 db 삽입
+//       db.collection('login').insertOne({
+//         id: req.body.id,
+//         pw: req.body.pw
+//       }, (err, result) => {
+//         res.redirect('/');
+//       });
+//     }
+//     else { // 이미 존재하는 아이디일때
+//       res.send ('이미 존재하는 아이디입니다.')
+//     }
+//   });
+// });
+
+app.post('/register', (req, res) => {
+  db.collection('login').insertOne( { id : req.body.id, pw: req.body.pw}, (err, result) => {
+    res.redirect('/');
+  })
+})
+
+app.post('/add', function (req, res) { // req에 post 보낸거 저장
+  res.send('전송완료');
+  db.collection('counter').findOne({ name : '게시물갯수' }, function(err, result) {
+    console.log(result.totalPost);
+    // 총 데이터 갯수
+    let totalPostCount = result.totalPost
+    let saveInfo = { _id : totalPostCount + 1, 작성자 : req.user._id, 제목 : req.body.title, 날짜 : req.body.date}
+    db.collection('post').insertOne(saveInfo, function () {
+      console.log('save complete');
+      // $set 바꿀때 스는 연산자 $inc 더할때 쓰는 연산자 
+      // name이 게시물 갯수인것 찾아서 1증가
+      db.collection('counter').updateOne({ name : '게시물갯수' }, { $inc : { totalPost : 1 }}, function(err, result) {
+        if (err) { return console.log(err)}
+      })
+    });
+  });
+});
+
+app.delete('/delete', (req, res) => {
+  console.log('삭제 요청들어옴');
+  console.log(req.body);
+  req.body._id = parseInt(req.body._id, 10);
+  
+  let deleteData = { _id: req.body._id , 작성자 : req.user._id};
+
+  // req.body에 담겨온 게시물번호를 가진 글을 db에서 찾아 삭제하는 기능
+  db.collection('post').deleteOne(deleteData, (err, result) => {
+    console.log('삭제 완료');
+    res.status(200).send({ message: success });
+  })
+});
