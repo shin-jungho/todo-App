@@ -129,8 +129,8 @@ app.post('/login', passport.authenticate('local', { failureRedirect: '/fail' }),
 })
 
 app.get('/mypage', isLogin, function(req, res) {
-  console.log(req.user);
-  res.render('mypage.ejs', { user : req.user })
+  console.log('/mypage', req.user);
+  res.render('mypage.ejs', { user : req.user._id })
 })
 
 // 마이페이지 미들웨어
@@ -138,7 +138,7 @@ function isLogin(req, res, next) {
   if(req.user) {
     next()
   } else {
-    res.send('로그인이 필요합니다.')
+    res.redirect('/login');
   }
 }
 
@@ -242,3 +242,5 @@ app.delete('/delete', (req, res) => {
     res.status(200).send({ message: success });
   })
 });
+
+app.use('/', require('./routes/shop'))
