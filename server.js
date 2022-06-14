@@ -1,246 +1,145 @@
-const express = require('express');
+import express from 'express';
+import morgan from 'morgan';
+import mongodb from 'mongodb';
+import dotenv from 'dotenv';
+import methodOverride from 'method-override';
+import shopRouter from './routes/shop.js';
+import postRouter from './routes/post.js';
+import accountRouter from './routes/account.js';
+import fileRouter from './routes/file.js';
+import chatRouter, { initChatServer } from './routes/chat.js';
+import PassportLocal from 'passport-local';
+import passport from 'passport';
+import session from 'express-session';
+import bcrypt from 'bcrypt';
+import http from 'http';
+import { Server } from 'socket.io';
 const app = express();
-const MongoClient = require('mongodb/lib/mongo_client');
-const methodOverride = require('method-override');
-const passport = require('passport');
-const LocalStrategy = require('passport-local').Strategy;
-const session = require('express-session');
-const crypto = require('crypto');
+const httpServer = http.Server(app);
+const io = new Server(httpServer);
 
-require('dotenv').config();
-const { PORT, MONGODB_URI } = process.env;
-const port = PORT || 4000;
+dotenv.config();
 
-app.use('public', express.static('public'));
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json()); // parse json
+
+app.use('/public', express.static('public'));
 app.use(methodOverride('_method'));
-app.use(session({secret : '비밀코드', resave : true, saveUninitialized: false}));
+
+app.use(morgan('tiny'));
+
+// /shop 밑으로 접속한 사람들은 모두 적용
+app.use('/shop', shopRouter);
+
+app.use('/', fileRouter);
+
+app.use('/', chatRouter);
+
+app.set('view engine', 'ejs'); // view 엔진으로 ejs 사용
+
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET,
+    resave: true,
+    saveUninitialized: false,
+  })
+);
 app.use(passport.initialize());
 app.use(passport.session());
 
-app.set('view engine', 'ejs');
-app.engine('ejs', require('ejs').__express);
+// DB 연결
+const MongoClient = mongodb.MongoClient;
+export let postCollection;
+export let counterCollection;
+export let userCollection;
+connectToDB().then((db) => {
+  postCollection = db.collection('post'); //할 일 컬렉션
+  counterCollection = db.collection('counter'); // 할 일 아이디 카운터 컬렉션
+  userCollection = db.collection('user'); // 유저 컬렉션(편의상 카운터는 두지 않는다.)
 
-// mongodb 접속 후에 8080서버 열린다는 뜻
-var db;
-MongoClient.connect(MONGODB_URI, { useUnifiedTopology: true },function(err, client) {
-  // 에러처리
-  if(err) {return console.log('err')}
-
-  db = client.db('todoApp'); 
-  app.listen(port, function () {
-    console.log(`running on ${port}...`);
+  // 연결되면 서버 실행
+  httpServer.listen(8080, () => {
+    console.log('listen on 8080');
+    initChatServer(io);
   });
-})
-
-app.use(express.urlencoded({extended: true})) // body parser express에 다 저장되어있어서 따로 설치필요x
-
-
-app.get('/', function (req, res) {
-  res.render('index.ejs');
-})
-
-app.get('/write', function (req, res) {
-  res.render('write.ejs');
-})
-
-
-
-// 모든 데이터 꺼내는 코드
-app.get('/list', function (req, res) {
-  db.collection('post').find().toArray(function (err, result) {
-    console.log(result);
-    res.render('list.ejs', { posts : result });
-  });
-})
-
-// 서버에서 query string 꺼내는 코드
-app.get('/search', (req, res)=>{
-  let searchOption =[
-    {
-      $search: {
-        index: 'titleSearch',
-        text: {
-          query: req.query.value,
-          path: '제목'  // 제목날짜 둘다 찾고 싶으면 ['제목', '날짜']
-        }
-      }
-    },
-    // 조건을 더 달수 있음
-    { $sort : { _id : 1 } },
-    { $project : { 제목: 1, _id: 0, score: { $meta: 'searchScore' } } }
-  ] 
-  db.collection('post').aggregate(searchOption).toArray((err, result)=>{
-    console.log(result)
-    res.render('search.ejs', {posts : result})
-  })
-})
-
-app.delete('/delete', function(req, res) {
-  // id가 문자로 나오므로 숫자로 변환해야된다 
-  req.body._id = parseInt(req.body._id);
-  db.collection('post').deleteOne(req.body, function(err, result) {
-    if (err) {
-      res.status(400).send({ message: 'Fail' }); // 요청 실패 메세지 
-    }
-    console.log('삭제 완료');
-    res.status(200).send({ message: 'Success' }); // 요청 성공 메세지 
-  });
-})
-
-app.get('/detail/:id', function(req, res) {
-  // _id가 request의 parameter들 중 id와 같은 데이터를 찾아와서 그 결과를 detail페이지에 render
-  // 다만 아까처럼 type이 string이 되었기에, parseInt를 통해서 바꿔 찾아줘야한다.
-  db.collection('post').findOne({ _id: parseInt(req.params.id) }, function(err, result) {
-    // 없는 게시물 처리하기 에러처리
-    if (err) {
-      return console.log(err);
-    }
-    res.render('detail.ejs', { data: result });
-  })
 });
 
-app.get('/edit/:id', function (req, res) {
-  db.collection('post').findOne({ _id: parseInt(req.params.id) }, function (err, result) {
-    if (err) {
-      return console.log(err) 
+async function connectToDB() {
+  // connect to your cluster
+  const client = await MongoClient.connect(
+    `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.p9ab5.mongodb.net/${process.env.DB_NAME}?retryWrites=true&w=majority`,
+    {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
     }
-    console.log(result)
-    console.log(req.params.id)
-    res.render('edit.ejs', { post: result });
-  })
-})
-
-app.put('/edit', function (req, res) {
-  db.collection('post').updateOne({ _id : parseInt(req.params.id) }, { $set : { 제목 : req.body.title, 날짜 : req.body.date }}, function (err, result) {
-    if (err) {
-      return console.error(err);
-    }
-    console.log('수정 완료');
-    res.redirect('/list');
-  })
-})
-
-app.get('/login', function(req, res) {
-  res.render('login.ejs');
-})
-
-app.post('/login', passport.authenticate('local', { failureRedirect: '/fail' }),function(req, res) {
-  res.redirect('/')
-})
-
-app.get('/mypage', isLogin, function(req, res) {
-  console.log('/mypage', req.user);
-  res.render('mypage.ejs', { user : req.user._id })
-})
-
-// 마이페이지 미들웨어
-function isLogin(req, res, next) {
-  if(req.user) {
-    next()
-  } else {
-    res.redirect('/login');
-  }
+  );
+  // specify the DB's name
+  return client.db('todoapp');
 }
 
+app.get('/', (요청, 응답) => {
+  응답.render(`index.ejs`, { 사용자: 요청.user ? 요청.user.id : undefined });
+});
 
-
-// 로그인 기능 코드
-passport.use(new LocalStrategy({
-  usernameField: 'id', // form의 name이 id 인 것이 username
-  passwordField: 'pw', // form의 name이 pw 인 것이 password
-  session: true, // session을 저장할 것인지
-  passReqToCallback: false, // id/pw 외에 다른 정보 검증 시
-}, function (inputId, inputPw, done) {
-  // console.log(inputId, inputPw);
-  db.collection('login').findOne({ id: inputId }, function (err, result) {
-    if (err) return done(err)
-
-    // done(서버에러, 성공시 사용자 db데이터, 에러메세지)
-    if (!result) return done(null, false, { message: '존재하지않는 아이디입니다.' })
-    crypto.pbkdf2(inputPw, result.buf, 100000, 64, 'sha512', (err, key) => {
-      let newPw = key.toString('base64');
-      console.log('new pw :', newPw);
-      if (newPw === result.pw) {
-        return done(null, result)
+// 사용자 인증
+passport.use(
+  new PassportLocal.Strategy(
+    {
+      usernameField: 'id',
+      passwordField: 'pw',
+      session: true,
+      passReqToCallback: false,
+    },
+    async (id, pw, done) => {
+      const { errorMessage, success, user } = await authenticateUser(id, pw);
+      // done(서버에러, 성공했을시 데이터, 메시지)
+      if (success) {
+        return done(null, user);
       } else {
-        return done(null, false, { message: '비번틀렸어요' })
+        return done(null, false, { errorMessage });
       }
-    })
-    })
-}));
+    }
+  )
+);
 
-// 세션 데이터 저장시키는 코드
-passport.serializeUser(function(user, done) {
-  done(null, user.id)
+// 로그인 성공 시 유저를 세션에 등록
+passport.serializeUser((user, done) => {
+  done(null, user.id); // 세션에 유저 아이디 저장, 쿠키로 전송
 });
 
-// 마이페이지 접속시 발동 -> 로그인한 유저의 개인정보 db에서 찾는 것
-passport.deserializeUser(function(id, done) { // id = user.id
-  db.collection('login').findOne({ id: id }, function(err, result) {
-    if (err) { return console.log(err)}
-    done(null, result)
-  })
-})
-
-// 회원가입 코드
-app.get('/signup', (req, res) => {
-  res.render('signup.ejs')
-})
-
-// app.post('/register', (req, res) => {
-//   db.collection('login').find({ id: req.body.id }).toArray((err, result) => {
-//     if(err) { 
-//       return console.log(err); 
-//     } else if(!result) { // id가 없을때 login콜렉션에 db 삽입
-//       db.collection('login').insertOne({
-//         id: req.body.id,
-//         pw: req.body.pw
-//       }, (err, result) => {
-//         res.redirect('/');
-//       });
-//     }
-//     else { // 이미 존재하는 아이디일때
-//       res.send ('이미 존재하는 아이디입니다.')
-//     }
-//   });
-// });
-
-app.post('/register', (req, res) => {
-  db.collection('login').insertOne( { id : req.body.id, pw: req.body.pw}, (err, result) => {
-    res.redirect('/');
-  })
-})
-
-app.post('/add', function (req, res) { // req에 post 보낸거 저장
-  res.send('전송완료');
-  db.collection('counter').findOne({ name : '게시물갯수' }, function(err, result) {
-    console.log(result.totalPost);
-    // 총 데이터 갯수
-    let totalPostCount = result.totalPost
-    let saveInfo = { _id : totalPostCount + 1, 작성자 : req.user._id, 제목 : req.body.title, 날짜 : req.body.date}
-    db.collection('post').insertOne(saveInfo, function () {
-      console.log('save complete');
-      // $set 바꿀때 스는 연산자 $inc 더할때 쓰는 연산자 
-      // name이 게시물 갯수인것 찾아서 1증가
-      db.collection('counter').updateOne({ name : '게시물갯수' }, { $inc : { totalPost : 1 }}, function(err, result) {
-        if (err) { return console.log(err)}
-      })
-    });
-  });
+// 세션에 이미 유저가 있으면 해석
+passport.deserializeUser(async (id, done) => {
+  // db에서 user.id로 유저를 찾은 뒤 유저 정보를 넣음
+  const user = await userCollection.findOne({ id });
+  if (user) {
+    done(null, user); // 이렇게 하면 요청.user로 접근가능
+  }
 });
 
-app.delete('/delete', (req, res) => {
-  console.log('삭제 요청들어옴');
-  console.log(req.body);
-  req.body._id = parseInt(req.body._id, 10);
-  
-  let deleteData = { _id: req.body._id , 작성자 : req.user._id};
+app.use('/', postRouter);
+app.use('/', accountRouter);
 
-  // req.body에 담겨온 게시물번호를 가진 글을 db에서 찾아 삭제하는 기능
-  db.collection('post').deleteOne(deleteData, (err, result) => {
-    console.log('삭제 완료');
-    res.status(200).send({ message: success });
-  })
-});
-
-app.use('/', require('./routes/shop'))
+async function authenticateUser(id, pw) {
+  id = id ? id.trim() : null;
+  pw = pw ? pw.trim() : null;
+  let errorMessage = '';
+  let user;
+  if (!id || !pw) {
+    errorMessage = 'The id,pw,pw confirmation is necessary';
+  } else {
+    user = await userCollection.findOne({ id });
+    if (!user) {
+      errorMessage = 'The id or pw is not correct';
+    } else {
+      const pwIsMatch = await bcrypt.compare(pw, user.pw);
+      if (!pwIsMatch) {
+        errorMessage = 'The id or pw is not correct';
+      }
+    }
+  }
+  return {
+    success: errorMessage === '',
+    user,
+    errorMessage,
+  };
+}
