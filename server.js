@@ -6,8 +6,8 @@ import methodOverride from 'method-override';
 import shopRouter from './routes/shop.js';
 import postRouter from './routes/post.js';
 import accountRouter from './routes/account.js';
-import fileRouter from './routes/file.js';
-import chatRouter, { initChatServer } from './routes/chat.js';
+// import fileRouter from './routes/file.js';
+// import chatRouter, { initChatServer } from './routes/chat.js';
 import PassportLocal from 'passport-local';
 import passport from 'passport';
 import session from 'express-session';
@@ -19,6 +19,7 @@ const httpServer = http.Server(app);
 const io = new Server(httpServer);
 
 dotenv.config();
+const{ MONGODB_URI, PORT} = process.env;
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json()); // parse json
@@ -31,19 +32,18 @@ app.use(morgan('tiny'));
 // /shop 밑으로 접속한 사람들은 모두 적용
 app.use('/shop', shopRouter);
 
-app.use('/', fileRouter);
+// app.use('/', fileRouter);
 
-app.use('/', chatRouter);
+// app.use('/', chatRouter);
 
 app.set('view engine', 'ejs'); // view 엔진으로 ejs 사용
 
-app.use(
-  session({
+app.use(session({
     secret: process.env.SESSION_SECRET,
     resave: true,
     saveUninitialized: false,
-  })
-);
+  }));
+  
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -58,23 +58,23 @@ connectToDB().then((db) => {
   userCollection = db.collection('user'); // 유저 컬렉션(편의상 카운터는 두지 않는다.)
 
   // 연결되면 서버 실행
-  httpServer.listen(8080, () => {
-    console.log('listen on 8080');
-    initChatServer(io);
+  httpServer.listen(PORT, () => {
+    console.log(`listen on ${PORT}`);
+    // initChatServer(io);
   });
 });
 
 async function connectToDB() {
   // connect to your cluster
   const client = await MongoClient.connect(
-    `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.p9ab5.mongodb.net/${process.env.DB_NAME}?retryWrites=true&w=majority`,
+    MONGODB_URI,
     {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     }
   );
   // specify the DB's name
-  return client.db('todoapp');
+  return client.db('todoApp');
 }
 
 app.get('/', (요청, 응답) => {
