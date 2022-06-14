@@ -48,9 +48,9 @@ router.post('/signup', async (req, res) => {
   pwConfirm = pwConfirm ? pwConfirm.trim() : null;
   let error = '';
   if (!id || !pw || !pwConfirm) {
-    error = 'The id,pw,pw confirmation is necessary';
+    error = '비밀번호 확인이 필요합니다.';
   } else if (pw !== pwConfirm) {
-    error = 'The pw and password is not equal';
+    error = '비밀번호가 동일하지 않습니다.';
   } else {
     const sameIdUser = await userCollection.findOne({ id });
     if (sameIdUser) {
