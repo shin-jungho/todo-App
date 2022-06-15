@@ -15,7 +15,7 @@ router.get('/login', (req, res) => {
   }
 });
 
-router.get('/logout', isLogin, (req, res) => {
+router.get('/logout', (req, res) => {
   req.logout();
   req.session.save((err) => {
     res.redirect('/');
@@ -48,21 +48,25 @@ router.post('/signup', async (req, res) => {
   pwConfirm = pwConfirm ? pwConfirm.trim() : null;
   let error = '';
   if (!id || !pw || !pwConfirm) {
-    error = '비밀번호 확인이 필요합니다.';
+    error = '빈칸이 있습니다.';
+    return res.redirect('/signup') // 나중에 고칠것 페이지 리로딩으로되게끔
   } else if (pw !== pwConfirm) {
     error = '비밀번호가 동일하지 않습니다.';
+    return res.redirect('/signup')
   } else {
     const sameIdUser = await userCollection.findOne({ id });
     if (sameIdUser) {
-      error = 'The id is in use';
+      error = '아이디가 이미 사용중입니다.';
+      return res.redirect('/signup')
     }
   }
   if (error) {
-    res.status(400).json({ error });
+    return res.status(400).json({ error });
   } else {
     pw = await bcrypt.hash(pw, +process.env.SALT_ROUNDS);
     userCollection.insertOne({ id, pw });
     res.status(200).json({ message: 'Registered successfully' });
+    res.redirect('/')
   }
 });
 

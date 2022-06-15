@@ -13,15 +13,15 @@
   <body>
     <%- include('nav.html') %>
 
-    <div class="jumbotron">
-      <h1 class="display-4">Todo Home</h1>
-      <p class="lead">This is a simple hero unit, a simple jumbotron-style component for calling extra attention to featured content or information.</p>
-      <hr class="my-4">
-      <p>It uses utility classes for typography and spacing to space content out within the larger container.</p>
-      <a class="btn btn-primary btn-lg" href="#" role="button">Learn more</a>
+    <div class="container text-center mt-5">
+      <p>잠시 후 할 일 목록 페이지로 이동합니다...</p>
     </div>
-
-
+    <script>
+      setTimeout(() => {
+        window.location.href = '/list';
+      }, 2000);
+    </script>
+    
     <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>

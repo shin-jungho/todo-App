@@ -11,14 +11,15 @@ router.post('/add', async (req, res) => {
     const { title, date } = req.body;
     // 총 게시물 갯수 가져오기
     let { totalPost } = await counterCollection.findOne({ name: '게시물갯수' });
-    await postCollection.insertOne({
+    postCollection.insertOne({
       _id: totalPost + 1,
+      작성자: req.user.id,
       제목: title,
-      날짜: date,
+      마감날짜: date,
+      날짜: new Date()
     });
-
     // 연산자 종류: $set - 변경 / $inc - 증가 / $min - 기존값보다 적을 때만 변경 / $rename - key값 변경
-    await counterCollection.updateOne(
+    counterCollection.updateOne(
       { name: '게시물갯수' },
       { $inc: { totalPost: 1 } } // 총 게시물 갯수 1 증가
     );
@@ -37,9 +38,19 @@ router.get('/list', async (req, res) => {
   }); // 서버 사이드 렌더링
 });
 
+router.get('/search', (req, res) => {
+  postCollection.find({ 제목: req.query.value }).toArray((err, result) => {
+    res.render('search.ejs', { 
+      posts : result, 
+      사용자 : req.user ? req.user.id : undefined
+    });
+  });
+});
+
 router.delete('/delete', async (req, res) => {
   const { deletedCount } = await postCollection.deleteOne({
     _id: +req.body._id,
+    작성자: req.user.id,
   });
   if (deletedCount === 1) {
     res.status(200).json({ message: 'The post has been deleted' });

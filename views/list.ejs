@@ -23,14 +23,15 @@
       <input class="form-control" id="search-input">
       <button class="input-group-append btn btn-danger" id="search">검색</button>
     </div>
-    <!-- 검색 기능 -->
+    
     <script>
-      $("#search").click(function(){
       // 현재 페이지 url 바꾸는 법. 사실상 GET 요청이랑 동일
-      window.location.replace('/search?value=' + $("#search-input").text());
+      $('#search').click(function(){
+      let inputValue = $('#search-input').val()
+      window.location.replace(`/search?value=${inputValue}`);
     })
     </script>
-    
+
     <!-- ml-2 my-3 boostrap 문법 -->
     <div class="container">
       <ul class="list-group">
