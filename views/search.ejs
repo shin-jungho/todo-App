@@ -23,23 +23,16 @@
       <input class="form-control" id="search-input">
       <button class="input-group-append btn btn-danger" id="search">검색</button>
     </div>
-    <!-- 검색 기능 -->
-    <script>
-      $("#search").click(function(){
-      // 현재 페이지 url 바꾸는 법. 사실상 GET 요청이랑 동일
-      let inputValue = $("#search-input").val()
-      window.location.replace(`/search?value=${inputValue}`);
-    })
-    </script>
+  
     
     <!-- ml-2 my-3 boostrap 문법 -->
     <div class="container">
       <ul class="list-group">
-        <% for (var i = 0; i < posts.length; i ++) { %>
+        <% for (var i = 0; i < posts.length; i++) { %>
         <li class="list-group-item">
           <p>글번호 : <%= posts[i]._id %></p>
-            <h4>할일 : <%= posts[i].제목 %></h4>
-            <p>날짜 : <%= posts[i].날짜 %></p>
+            <h4>할일 : <%= posts[i].title %></h4>
+            <p>날짜 : <%= posts[i].date %></p>
             <button class="btn btn-success delete" data-id="<%= posts[i]._id %>">삭제</button>
           </li>
         <% } %>
@@ -65,8 +58,27 @@
           console.log(xhr, textStatus, errorThrown);
         });
       })
+      $("#search").click(function(e) {
+      // 현재 페이지 url 바꾸는 법. 사실상 GET 요청이랑 동일
+      let inputValue = $("#search-input").val()
+      window.location.replace('/search?value=' + inputValue);
+      })
+      var data = { name : 'value', name2 : 'value2'}
+                  $.param(data)
+                  $(formtag).serialize()
     </script>
 
+    <!-- 검색 기능
+    <script>
+      $("#search").click(function(){
+      // 현재 페이지 url 바꾸는 법. 사실상 GET 요청이랑 동일
+      let inputValue = $("#search-input").val()
+      window.location.replace('/search?value=' + inputValue);
+    })
+      var data = { name : 'value', name2 : 'value2'}
+                  $.param(data)
+                  $(formtag).serialize()
+    </script> -->
     
     
 

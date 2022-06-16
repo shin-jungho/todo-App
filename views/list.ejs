@@ -24,27 +24,21 @@
       <button class="input-group-append btn btn-danger" id="search">검색</button>
     </div>
     
-    <script>
-      // 현재 페이지 url 바꾸는 법. 사실상 GET 요청이랑 동일
-      $('#search').click(function(){
-      let inputValue = $('#search-input').val()
-      window.location.replace(`/search?value=${inputValue}`);
-    })
-    </script>
-
     <!-- ml-2 my-3 boostrap 문법 -->
     <div class="container">
       <ul class="list-group">
-        <% for (var i = 0; i < posts.length; i ++) { %>
-        <li class="list-group-item">
-          <p>글번호 : <%= posts[i]._id %></p>
-            <h4>할일 : <%= posts[i].제목 %></h4>
-            <p>날짜 : <%= posts[i].날짜 %></p>
-            <button class="btn btn-success delete" data-id="<%= posts[i]._id %>">삭제</button>
+        <% for (var i = 0; i < posts.length ; i++){ %>
+          <li class="list-group-item">
+            <h4 class="">
+              <a href="detail/<%= posts[i]._id %>">제목 : <%= posts[i].제목 %></a>
+            </h4>
+            <p>마감 날짜 : <%= posts[i].날짜 %></p>
+            <button class="btn btn-danger delete" data-id="<%= posts[i]._id %>">삭제</button>
+            <button class="btn btn-secondary chat" data-id="<%= posts[i].작성자 %>">채팅하기</button>
           </li>
-        <% } %>
+          <% } %>
       </ul>
-    </div>
+  </div>
 
     <!-- jquery 설치 -->
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
@@ -66,9 +60,25 @@
           console.log(xhr, textStatus, errorThrown);
         });
       })
-    </script>
 
-    
+      </script>
+
+      <script>
+        $('#search').click(function(e){
+        let inputValue = $('#search-input').val()
+        window.location.replace('/search?value=' + inputValue);
+        })
+      </script>
+
+      <script>
+        $('.chat').click(function(e){
+          var _id = e.target.dataset.id;
+          $.post('/chatroom', {당한사람id : _id})
+          .then(()=>{
+            console.log('채팅방 게시물 생성완료')
+          })
+        });
+      </script>
     
 
     <!-- Optional JavaScript -->

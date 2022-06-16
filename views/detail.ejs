@@ -11,19 +11,18 @@
     <link rel="stylesheet" href="/public/main.css">
 
 
-    <title>Hello, world!</title>
+    <title>Todo detail</title>
   </head>
   <body>
     <%- include('nav.html') %>
     
     <div class="container mt-4">
-      <h4 class="text-center">상세 페이지</h4>
-
       <div class="card" style="width: 18rem;">
         <div class="card-body">
-          <h5 class="card-title"><%= data.제목 %></h5>
-          <h6 class="card-subtitle mb-2 text-muted"><%= data.날짜 %></h6>
-          <p class="card-text">할 일 미루지 말자</p>
+          <h4 class="text-center">Todo detail</h4>
+          <h5 class="card-title"><%= post.제목 %></h5>
+          <h5 class="card-subtitle mb-2 text-muted"><%= post.날짜 %></h5>
+          <p class="card-text">할 일 미루지 말자!</p>
           <a href="/edit/<%= post._id %>" class="card-link">수정하기</a>
         </div>
       </div>
