@@ -23,7 +23,17 @@
       <input class="form-control" id="search-input">
       <button class="input-group-append btn btn-danger" id="search">검색</button>
     </div>
-    
+
+    <!-- jquery 설치 -->
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+
+    <script>
+      $('#search').click(function(){
+      let inputValue = $('#search-input').val();
+      window.location.replace('/search?value=' + inputValue);
+      });
+    </script>
+
     <!-- ml-2 my-3 boostrap 문법 -->
     <div class="container">
       <ul class="list-group">
@@ -46,7 +56,7 @@
     <script>
       // 서버랑 통신
       // class가 delete인 것을 삭제해달라는 요청
-      $('.delete').click(function(e){
+      $('.delete').click(function(){
         let postId = e.target.dataset.id; // 내가 버튼 누른 요소의 data-id
         let nowPushButton = $(this); // 현재 클릭 이벤트가 동작하는 곳
         $.ajax({
@@ -61,13 +71,6 @@
         });
       })
 
-      </script>
-
-      <script>
-        $('#search').click(function(e){
-        let inputValue = $('#search-input').val()
-        window.location.replace('/search?value=' + inputValue);
-        })
       </script>
 
       <script>

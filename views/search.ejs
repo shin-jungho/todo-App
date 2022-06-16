@@ -10,10 +10,10 @@
 
     <link rel="stylesheet" href="/public/main.css">
 
-    <title>Hello, world!</title>
+    <title>Todo search</title>
   </head>
   <body>
-
+    
     <%- include('nav.html') %>
 
     <!-- db에 저장되어있는것 제목, 날짜로 써야됨 -->
@@ -23,28 +23,47 @@
       <input class="form-control" id="search-input">
       <button class="input-group-append btn btn-danger" id="search">검색</button>
     </div>
-  
+
+    <!-- jquery 설치 -->
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+
+    <!-- 검색 기능 -->
+    <script>
+      $("#search").click(function() {
+      // 현재 페이지 url 바꾸는 법. 사실상 GET 요청이랑 동일
+      let inputValue = $("#search-input").val()
+      window.location.replace('/search?value=' + inputValue);
+      })
+      </script>
+
+      <!-- 프론트엔드에서 query string 쉽게 만드는법
+      var data = { name : 'value', name2 : 'value2'}
+                  $.param(data)
+                  $(formtag).serialize() -->
     
     <!-- ml-2 my-3 boostrap 문법 -->
     <div class="container">
       <ul class="list-group">
-        <% for (var i = 0; i < posts.length; i++) { %>
-        <li class="list-group-item">
-          <p>글번호 : <%= posts[i]._id %></p>
-            <h4>할일 : <%= posts[i].title %></h4>
-            <p>날짜 : <%= posts[i].date %></p>
-            <button class="btn btn-success delete" data-id="<%= posts[i]._id %>">삭제</button>
+        <% for (var i = 0; i < posts.length ; i++){ %>
+          <li class="list-group-item">
+            <h4>
+              <a href="detail/<%= posts[i]._id %>">제목 : <%= posts[i].제목 %></a>
+            </h4>
+            <p>마감 날짜 : <%= posts[i].날짜 %></p>
+            <button class="btn btn-danger delete" data-id="<%= posts[i]._id %>">삭제</button>
+            <button class="btn btn-secondary chat" data-id="<%= posts[i].작성자 %>">채팅하기</button>
           </li>
-        <% } %>
+          <% } %>
       </ul>
     </div>
+
     <!-- jquery 설치 -->
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
 
     <script>
       // 서버랑 통신
       // class가 delete인 것을 삭제해달라는 요청
-      $('.delete').click(function(e){
+      $('.delete').click(function(){
         let postId = e.target.dataset.id; // 내가 버튼 누른 요소의 data-id
         let nowPushButton = $(this); // 현재 클릭 이벤트가 동작하는 곳
         $.ajax({
@@ -58,28 +77,18 @@
           console.log(xhr, textStatus, errorThrown);
         });
       })
-      $("#search").click(function(e) {
-      // 현재 페이지 url 바꾸는 법. 사실상 GET 요청이랑 동일
-      let inputValue = $("#search-input").val()
-      window.location.replace('/search?value=' + inputValue);
-      })
-      var data = { name : 'value', name2 : 'value2'}
-                  $.param(data)
-                  $(formtag).serialize()
-    </script>
 
-    <!-- 검색 기능
-    <script>
-      $("#search").click(function(){
-      // 현재 페이지 url 바꾸는 법. 사실상 GET 요청이랑 동일
-      let inputValue = $("#search-input").val()
-      window.location.replace('/search?value=' + inputValue);
-    })
-      var data = { name : 'value', name2 : 'value2'}
-                  $.param(data)
-                  $(formtag).serialize()
-    </script> -->
-    
+      </script>
+
+      <script>
+        $('.chat').click(function(e){
+          var _id = e.target.dataset.id;
+          $.post('/chatroom', {당한사람id : _id})
+          .then(()=>{
+            console.log('채팅방 게시물 생성완료')
+          })
+        });
+      </script>
     
 
     <!-- Optional JavaScript -->

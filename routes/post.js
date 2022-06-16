@@ -8,12 +8,13 @@ router.get('/write', (req, res) => {
 
 router.post('/add', async (req, res) => {
   try {
+    console.log(req.user.id);
     const { title, date } = req.body;
     // 총 게시물 갯수 가져오기
     let { totalPost } = await counterCollection.findOne({ name: '게시물갯수' });
     postCollection.insertOne({
       _id: totalPost + 1,
-      작성자: req.user.id,
+      작성자: req.user._id,
       제목: title,
       마감날짜: date,
       날짜: new Date()
@@ -38,30 +39,42 @@ router.get('/list', async (req, res) => {
   }); // 서버 사이드 렌더링
 });
 
-router.get('/search', (req, res) => {
+// router.get('/search', (req, res) => {
+//   console.log(req.query);
   //index만들어둔걸로 빠르게 검색하려면
-  var searchOption = [
-    {
-      $search : {
-        index : 'titleSearch',
-        text : {
-          query : req.query.value,
-          path : 'title'
-        }
-      }
-    },
+//   var searchOption = [
+//     {
+//       $search : {
+//         index : 'titleSearch',
+//         text : {
+//           query : req.query.value,
+//           path : '제목'
+//         }
+//       }
+//     }
     // 검색조건 더 주는 법 : - 결과 정렬하기
-    { $sort : { _id : -1 } },
-    { $limit : 10 }, // 갯수 제한 두기
-    { $project : { title : 1, _id : 0, score : { $meta : "searchScore" } } } // 검색결과에서 필터주기
-  ]
+    // { $sort : { _id : -1 } },
+    // { $limit : 10 }, // 갯수 제한 두기
+    // { $project : { title : 1, _id : 0, score : { $meta : "searchScore" } } } // 검색결과에서 필터주기
+//   ]
 
-  postCollection.aggregate(searchOption).toArray((err, result) => {
-    console.log(result);
+//   postCollection.aggregate(searchOption).toArray((err, result) => {
+//     console.log(result);
+//     if(err) {
+//       res.status(400).send(err)
+//     } else {
+//       res.status(200).render('search.ejs', { posts : result });
+//     }
+//   })
+// });
+
+router.get('/search', (req, res)=>{
+  console.log(req.query.value);
+  postCollection.find({ $text : { $search : req.query.value } }).toArray((err, result) => {
+    console.log(result)
     res.render('search.ejs', { posts : result });
   })
-
-});
+})
 
 router.delete('/delete', async (req, res) => {
   const { deletedCount } = await postCollection.deleteOne({

@@ -1,8 +1,7 @@
 import express from 'express';
-
 const router= express.Router();
 
-app.get('/chat', isLogin, function(req, res){ 
+router.get('/chat', isLogin, function(req, res){ 
 
   db.collection('chatroom').find({ member : req.user._id }).toArray().then((result)=>{
     console.log(result);
