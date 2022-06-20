@@ -6,8 +6,8 @@ import methodOverride from 'method-override';
 import shopRouter from './routes/shop.js';
 import postRouter from './routes/post.js';
 import accountRouter from './routes/account.js';
-// import fileRouter from './routes/file.js';
-// import chatRouter, { initChatServer } from './routes/chat.js';
+import fileRouter from './routes/file.js';
+// import chatRouter from './routes/chat.js';
 import PassportLocal from 'passport-local';
 import passport from 'passport';
 import session from 'express-session';
@@ -32,7 +32,7 @@ app.use(morgan('tiny'));
 // /shop 밑으로 접속한 사람들은 모두 적용
 app.use('/shop', shopRouter);
 
-// app.use('/', fileRouter);
+app.use('/', fileRouter);
 
 // app.use('/', chatRouter);
 
