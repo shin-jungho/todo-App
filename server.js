@@ -7,7 +7,7 @@ import shopRouter from './routes/shop.js';
 import postRouter from './routes/post.js';
 import accountRouter from './routes/account.js';
 import fileRouter from './routes/file.js';
-// import chatRouter from './routes/chat.js';
+import chatRouter from './routes/chat.js';
 import PassportLocal from 'passport-local';
 import passport from 'passport';
 import session from 'express-session';
@@ -34,7 +34,7 @@ app.use('/shop', shopRouter);
 
 app.use('/', fileRouter);
 
-// app.use('/', chatRouter);
+app.use('/', chatRouter);
 
 app.set('view engine', 'ejs'); // view 엔진으로 ejs 사용
 

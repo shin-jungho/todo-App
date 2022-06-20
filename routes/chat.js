@@ -1,32 +1,35 @@
 import express from 'express';
-import { isLogin } from 'account';
+const router = express();
 
-const router= express.Router();
 
-router.get('/chatroom', (req, res) => {
+router.get('/chat', (req, res) => {
   res.render('chat.ejs');
-})
-
-router.get('/chatroom', isLogin, function(req, res){ 
-
-  db.collection('chatroom').find({ member : req.user._id }).toArray().then((result)=>{
-    console.log(result);
-    응답.render('chat.ejs', {data : result})
-  })
-
-}); 
-
-router.post('/chatroom', function(req, res){
-
-  var chatSave = {
-    title : '무슨무슨채팅방',
-    member : [ObjectId(req.body.당한사람id), req.user._id],
-    date : new Date()
-  }
-
-  db.collection('chatroom').insertOne(chatSave).then((result) => {
-    res.send('저장완료')
-  });
 });
+
+export const initChatServer = (io) => {
+  io.on('connection', (socket) => {
+    console.log('채팅 서버 연결되었어요');
+  });
+  const chat1 = io.of('/채팅서버1');
+  chat1.on('connection', (socket) => {
+    console.log('채팅 서버 (1) 연결되었어요');
+    let 방번호 = '';
+
+    socket.on('방들어가고픔', (roomIndex) => {
+      socket.join(roomIndex);
+      방번호 = roomIndex;
+      console.log('방에 접속했어요', roomIndex);
+    });
+
+    socket.on('chat', (data) => {
+      console.log('chat.. 퍼트리기', data, '방번호:', 방번호);
+      chat1.to(방번호).emit('퍼트리기', data);
+    });
+
+    socket.on('disconnect', (socket) => {
+      console.log('사용자가 채팅 서버(1)를 나갔어요');
+    });
+  });
+};
 
 export default router;
