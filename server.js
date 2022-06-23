@@ -7,7 +7,7 @@ import shopRouter from './routes/shop.js';
 import postRouter from './routes/post.js';
 import accountRouter from './routes/account.js';
 import fileRouter from './routes/file.js';
-import chatRouter from './routes/chat.js';
+import chatRouter from './routes/chatRoom.js';
 import PassportLocal from 'passport-local';
 import passport from 'passport';
 import session from 'express-session';
@@ -52,10 +52,13 @@ const MongoClient = mongodb.MongoClient;
 export let postCollection;
 export let counterCollection;
 export let userCollection;
+export let chatRoomCollection;
+
 connectToDB().then((db) => {
   postCollection = db.collection('post'); //할 일 컬렉션
   counterCollection = db.collection('counter'); // 할 일 아이디 카운터 컬렉션
   userCollection = db.collection('user'); // 유저 컬렉션(편의상 카운터는 두지 않는다.)
+  chatRoomCollection = db.collection('chatRoom');
 
   // 연결되면 서버 실행
   httpServer.listen(PORT, () => {
@@ -77,8 +80,8 @@ async function connectToDB() {
   return client.db('todoApp');
 }
 
-app.get('/', (요청, 응답) => {
-  응답.render(`index.ejs`, { 사용자: 요청.user ? 요청.user.id : undefined });
+app.get('/', (req, res) => {
+  res.render(`index.ejs`, { 사용자: req.user ? req.user.id : undefined });
 });
 
 // 사용자 인증

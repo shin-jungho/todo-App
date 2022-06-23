@@ -77,7 +77,7 @@ router.get('/mypage', isLogin, (req, res) => {
 });
 
 // 미들웨어의 일종
-function isLogin(req, res, next) {
+export function isLogin(req, res, next) {
   if (req.user) {
     next();
   } else {

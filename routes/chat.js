@@ -2,7 +2,7 @@ import express from 'express';
 const router = express();
 
 
-router.get('/chat', (req, res) => {
+router.get('/customer-center', (req, res) => {
   res.render('chat.ejs');
 });
 
