@@ -11,7 +11,7 @@ router.get('/login', (req, res) => {
   if (req.user) {
     res.redirect('/');
   } else {
-    res.render('login.ejs', { 사용자: req.user ? req.user.id : undefined });
+    res.render('login.ejs', { user: req.user ? req.user.id : undefined });
   }
 });
 
@@ -79,9 +79,11 @@ router.get('/mypage', isLogin, (req, res) => {
 // 미들웨어의 일종
 export function isLogin(req, res, next) {
   if (req.user) {
-    next();
+    next(); // 로그인 한 상태면 통과
   } else {
-    res.redirect('/login');
+    // res.send('로그인이 필요합니다.');
+    res.write("<script>alert('로그인이 필요합니다.')</script>")
+    res.write("<script>window.location.replace('/login')</script>")
   }
 }
 

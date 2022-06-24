@@ -23,17 +23,6 @@
       <input class="form-control" id="search-input">
       <button class="input-group-append btn btn-danger" id="search">검색</button>
     </div>
-
-    <!-- jquery 설치 -->
-    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
-
-    <script>
-      $('#search').click(function(){
-      let inputValue = $('#search-input').val();
-      window.location.replace('/search?value=' + inputValue);
-      });
-    </script>
-
     <!-- ml-2 my-3 boostrap 문법 -->
     <div class="container">
       <ul class="list-group">
@@ -51,8 +40,9 @@
   </div>
 
     <!-- jquery 설치 -->
-    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
+    <!-- 삭제 -->
     <script>
       // 서버랑 통신
       // class가 delete인 것을 삭제해달라는 요청
@@ -71,18 +61,40 @@
         });
       })
 
-      </script>
 
-      <script>
-        $('.chat').click(function(e){
-          var _id = e.target.dataset.id;
-          $.post('/chatroom', {당한사람id : _id})
+      // 검색
+
+        $('#search').click(function(){
+        let inputValue = $('#search-input').val();
+        window.location.replace('/search?value=' + inputValue);
+        });
+
+
+      // 채팅방 
+
+        $('.chat').click((e) => {
+          let _id = e.target.dataset.id;
+          $.post('/chatroom', { 당한사람id : _id }) // Post가 작동이 안됨
           .then(() => {
+            console.log(_id);
             console.log('채팅방 게시물 생성완료')
           })
         });
       </script>
     
+      <!-- <script>
+        $('.chat').click(function(e){
+          var _id = e.target.dataset.id;
+          $.ajax({
+            method: 'POST',
+            url: '/chatroom',
+            data: {당한사람id : _id},
+          }).done((result) => {
+            console.log(result);
+            console.log('채팅방 게시물 생성완료');
+          })
+        });
+      </script> -->
 
     <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
